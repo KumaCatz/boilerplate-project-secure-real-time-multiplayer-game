@@ -2,9 +2,10 @@ require('dotenv').config();
 const express = require('express');
 const bodyParser = require('body-parser');
 const expect = require('chai');
-const socket = require('socket.io');
+const { Server } = require('socket.io'); // modified
 const cors = require('cors');
-const helmet = require('helmet');
+const helmet = require('helmet'); // added
+const http = require('http') // added
 
 const fccTestingRoutes = require('./routes/fcctesting.js');
 const runner = require('./test-runner.js');
@@ -41,10 +42,24 @@ app.use(function(req, res, next) {
     .send('Not Found');
 });
 
+// Create an HTTP server for Express
+const server = http.createServer(app);
+
+// Set up Socket.IO
+const io = new Server(server);
+
+// Handle Socket.IO connections
+io.on('connection', (socket) => {
+  console.log('A user connected');
+  socket.on('disconnect', () => {
+    console.log('A user disconnected');
+  });
+});
+
 const portNum = process.env.PORT || 3000;
 
 // Set up server and tests
-const server = app.listen(portNum, () => {
+server.listen(portNum, () => {
   console.log(`Listening on port ${portNum}`);
   if (process.env.NODE_ENV==='test') {
     console.log('Running Tests...');
